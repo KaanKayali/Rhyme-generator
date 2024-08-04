@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 import tkinter as tk
-from tkinter import filedialog, messagebox, font
-from tkinter import ttk
+from tkinter import ttk, filedialog, messagebox, font, PhotoImage
 import re
 import os
+import json
 
 class gui(tk.Tk):
     def __init__(self):
@@ -19,7 +19,8 @@ class gui(tk.Tk):
         self.filteredInput = ""
         self.selectedOption = ""
         self.loadFileName = "loadwords.txt"
-        self.isLightModeOn = True
+        self.isLightModeOn = tk.BooleanVar(value=True)
+        self.charsToAdd = "aeiouäüö1234567890"
 
         # Fonts
         self.titleFont = font.Font(family="Comic Sans MS", size=18, weight="bold")
@@ -38,6 +39,10 @@ class gui(tk.Tk):
         self.listboxColor = "white"
         self.checkboxColor = "black"
 
+        # Images
+        self.imagepath = "images/"
+        self.imgSun = PhotoImage(file=self.imagepath + "sun.png")
+        self.imgMoon = PhotoImage(file=self.imagepath + "moon.png")
 
         # Grid
         self.columnconfigure(0, weight=1)
@@ -69,7 +74,7 @@ class gui(tk.Tk):
         self.combo.grid(column=0, row=2, sticky='ew', padx=8)
 
         # Checkbutton
-        self.isPerfectRhyme = tk.BooleanVar()
+        self.isPerfectRhyme = tk.BooleanVar(value=False)
         self.checkPerfectRhyme = tk.Checkbutton(self, text="Perfect rhymes", variable=self.isPerfectRhyme, command=self.reloadList)
         self.checkPerfectRhyme.grid(column=0, row=1, sticky='e', padx=8)
 
@@ -83,7 +88,7 @@ class gui(tk.Tk):
         self.chooseFileButton.grid(column=1, row=0, sticky='w')
 
         # Toggle Lightmode button
-        self.lightmodeButton = tk.Button(self, text="Lightmode", command=self.switchLightMode, font=self.buttonFont)
+        self.lightmodeButton = tk.Button(self, text="Lightmode", image=self.imgSun ,command=self.switchLightMode, font=self.buttonFont)
         self.lightmodeButton.grid(column=2, row=0, sticky='e', padx=(0, 8))
 
         # Delete list button
@@ -100,6 +105,15 @@ class gui(tk.Tk):
         self.wordListbox.grid(column=1, row=1, rowspan=3, columnspan=2, sticky='nesw', padx=(0, 8), pady=(0, 8))
         self.wordListbox.bind('<<ListboxSelect>>', self.onListWordSelected)
 
+        # Initialize settings
+        self.settings = {
+            'lightmodeOn': self.isLightModeOn.get(),
+            'isPerfectRhyme': self.isPerfectRhyme.get(),
+            'withAdditionalwords': self.withAdditionalwords.get(),
+            'combobox': "Vowel rhyme"
+        }
+        self.loadSettings()
+
         # List
         self.everyWord = []
         self.everyWordFiltered = []
@@ -112,9 +126,29 @@ class gui(tk.Tk):
 
         # Styles
         self.updateColors()
+        self.toggleLightmodeImage()
 
         # List empty?
         self.checkListboxEmpty()
+
+
+    def saveSettings(self):
+        self.settings['lightmodeOn'] = self.isLightModeOn.get()
+        self.settings['isPerfectRhyme'] = self.isPerfectRhyme.get()
+        self.settings['withAdditionalwords'] = self.withAdditionalwords.get()
+        self.settings['combobox'] = self.combo.get()
+        with open('settings.json', 'w') as f:
+            json.dump(self.settings, f)
+
+    def loadSettings(self):
+        with open('settings.json', 'r') as f:
+            settings = json.load(f)
+
+        # Update variables
+        self.isLightModeOn.set(settings.get('lightmodeOn', True))
+        self.isPerfectRhyme.set(settings.get('isPerfectRhyme', False))
+        self.withAdditionalwords.set(settings.get('withAdditionalwords', False))
+        self.combo.set(settings.get('combobox', "Vowel rhyme"))
 
     def checkListboxEmpty(self):
         if self.wordListbox.size() == 0:
@@ -155,8 +189,65 @@ class gui(tk.Tk):
 
 
     def switchLightMode(self):
-        self.isLightModeOn = not self.isLightModeOn
+        currentValue = self.isLightModeOn.get()
+        self.isLightModeOn.set(not currentValue)
         self.updateColors()
+        self.toggleLightmodeImage()
+        self.saveSettings()
+
+    def allConstructFromWords(self, targetString, wordList, wordList2):
+        # Preprocess remove dots
+        targetStringNoDot = targetString.replace('.', '')
+
+        # Memoization dictionary
+        memo = {}
+
+        def backtrack(currentTarget):
+            # Check memoization
+            if currentTarget in memo:
+                return memo[currentTarget]
+
+            # Base case: reached the end of the current target segment
+            if currentTarget == '':
+                return [[]]  # List containing an empty combination (base case)
+
+            allCombinations = []
+
+            for index, word in enumerate(wordList):
+                # Check if the word fits the current position in the current target segment
+                if currentTarget.startswith(word.replace('.', '')):
+                    # Continue to check the rest of the segment with the current word included
+                    suffixCombinations = backtrack(currentTarget[len(word.replace('.', '')):])
+                    for combination in suffixCombinations:
+                        allCombinations.append([index] + combination)  # Store indexes
+
+            # Store in memoization dictionary
+            memo[currentTarget] = allCombinations
+            return allCombinations
+
+        # Process the entire target string
+        segmentResults = backtrack(targetStringNoDot)
+        if not segmentResults:
+            return []  # If the target cannot be constructed, return an empty list
+
+        # Combine results using wordList2
+        combinedResults = []
+
+        def combine(segmentResult, path):
+            if not segmentResult:
+                combinedResults.append(' '.join(path))  # Use ' ' to join the final result
+                return
+
+            for combination in segmentResult:
+                wordsFromList2 = [wordList2[i] for i in combination]
+                combine([], path + wordsFromList2)  # Process the next segment
+
+        # Process each segment result
+        for segmentResult in segmentResults:
+            combine([segmentResult], [])
+
+        return combinedResults
+
 
     def deleteList(self):
         questionResult = messagebox.askyesno("Confirm Delete", "Are you sure you want to delete all words?")
@@ -299,25 +390,40 @@ class gui(tk.Tk):
         for word in words:
             self.wordListbox.insert(tk.END, word)
 
+    def getLastNCharacters(self, word, number):
+        return word[-number:]
+
+    def getAllExceptLastNCharacters(self, word, number):
+        return word[:-number] if number != 0 else word
+
     def updateWordsInList(self, userWord, filteredWord):
         if not self.withAdditionalwords.get():
-            # Remove whitespace characters
-            filteredList = [word.replace(' ', '') for word, filtered in zip(self.everyWord, self.everyWordFiltered) if filtered == filteredWord]
+            filteredList = []
 
-            newUserWord = userWord.replace(' ', '')
+            for word, filtered in zip(self.everyWord, self.everyWordFiltered):
+                # if self.getLastNCharacters(filtered, len(filteredWord)) == filteredWord:
+                if filtered == filteredWord:
+                    # Remove whitespace
+                    cleanedWord = word.replace(' ', '')
+                    filteredList.append(cleanedWord)
 
-            # Remove if it exists
-            filteredList = [word for word in filteredList if newUserWord.lower() != word.lower()]
 
             return filteredList
+
         else:
             # Additional words
-            # Remove all whitespace characters from each string in filteredList
-            filteredList = [word.replace(' ', '') for word, filtered in zip(self.everyWord, self.everyWordFiltered) if
-                            filtered == filteredWord]
+            filteredList = []
 
-            # Remove userWord from filteredList if it exists
-            filteredList = [word for word in filteredList if userWord.lower() != word.lower()]
+            for word, filtered in zip(self.everyWord, self.everyWordFiltered):
+                # if self.getLastNCharacters(filtered, len(filteredWord)) == filteredWord:
+                if filtered == filteredWord:
+                    # Remove whitespace
+                    cleanedWord = word.replace(' ', '')
+                    filteredList.append(cleanedWord)
+
+            additionalwords = self.allConstructFromWords(filteredWord, self.everyWordFiltered, self.everyWord)
+            for word in additionalwords:
+                filteredList.append(word)
 
             return filteredList
 
@@ -326,8 +432,6 @@ class gui(tk.Tk):
         self.reloadList()
 
     def removeConsonants(self, inputString):
-        charsToRemove = "bcdfghklmnpqrstvwxz "
-        # translationTable = str.maketrans(charsToRemove, '.' * len(charsToRemove))
         resultString = []
         inputString = inputString.lower()
 
@@ -362,35 +466,38 @@ class gui(tk.Tk):
         inputStringEE = inputStringAH.replace('ee', '6')
         inputStringEH = inputStringEE.replace('eh', '6')
 
+        # ai = e | exp. Training
+        inputStringAI = inputStringEH.replace('ai', 'e')
+
         # English addition
         # ea = ä
-        inputStringEA = inputStringAH.replace('ea', 'ä')
+        inputStringEA = inputStringAI.replace('ea', 'ä')
 
         # er ending = a
-        lastString = inputStringEA
-        if len(lastString) >= 2:
-            erEnding = lastString[-2:]
-            if(erEnding == "er"):
-                lastString = lastString[:-2] + "a"
+        # inputStringER = inputStringEA
+        # if len(inputStringER) >= 2:
+        #     erEnding = inputStringER[-2:]
+        #     if(erEnding == "er"):
+        #         inputStringER = inputStringER[:-2] + "a"
+        inputStringER = inputStringEA.replace('er', 'a')
+
+        lastString = inputStringER
 
         # Remove consonants
         inputString = lastString
-        # filteredString = inputString.translate(translationTable)
-        charsToAdd = "aeiouäüö1234567890"
 
         for char in inputString:
-            if char in charsToAdd:
+            if char in self.charsToAdd:
                 if resultString:
                     resultString.append('.')
                 resultString.append(char)
 
         filteredString = ''.join(resultString)
 
-        print(f"{inputString} -> {filteredString}")
 
+        # Vowel rhyme | Vowel rhyme + consonant ending
         if self.selectedOption == "Vowel rhyme + consonant ending":
             filteredString += consonantEnding
-
 
         # Checkbox checked?
         if (self.isPerfectRhyme.get()):
@@ -423,11 +530,21 @@ class gui(tk.Tk):
         if (self.everyWord == []):
             self.checkListboxEmpty()
 
+        # Settings
+        self.saveSettings()
+
+    def toggleLightmodeImage(self):
+        # Toggle buttonimg based on state
+        if self.isLightModeOn.get():
+            self.lightmodeButton.config(image=self.imgSun)
+        else:
+            self.lightmodeButton.config(image=self.imgMoon)
+
 
     def onKeypressed(self, event):
         # Everytime when key gets hit
         self.userInput = self.entry.get()
-        if self.userInput != "":
+        if any(char in self.charsToAdd for char in self.userInput):
             self.filteredInput = self.removeConsonants(self.userInput)
             self.updateListbox(self.updateWordsInList(self.userInput, self.filteredInput))
         else:
@@ -462,7 +579,7 @@ class gui(tk.Tk):
 
     def updateColors(self):
         # Colors
-        if (self.isLightModeOn):
+        if (self.isLightModeOn.get()):
             self.labelColor = "black"
             self.buttonColor = "gray85"
             self.backgroundColor = "gray95"

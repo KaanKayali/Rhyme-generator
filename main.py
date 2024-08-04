@@ -105,6 +105,18 @@ class gui(tk.Tk):
         self.wordListbox.grid(column=1, row=1, rowspan=3, columnspan=2, sticky='nesw', padx=(0, 8), pady=(0, 8))
         self.wordListbox.bind('<<ListboxSelect>>', self.onListWordSelected)
 
+        # Scrollbar to wordlistbox
+        self.scrollbarWords = ttk.Scrollbar(self)
+        self.scrollbarWords.grid(column=2, row=1, rowspan=3, sticky='nse', padx=(0, 8), pady=(0, 8))
+
+        # Amount of rhymes
+        self.countValuesLabel = tk.Label(self, text="number entries: 0", font=self.listFont, fg=self.labelColor, bg=self.backgroundColor)
+        self.countValuesLabel.grid(column=2, row=3, sticky='se', padx=(0, 28), pady=(0, 10))
+
+        # Configure listbox and scrollbar
+        self.wordListbox.config(yscrollcommand=self.scrollbarWords.set)
+        self.scrollbarWords.config(command=self.wordListbox.yview)
+
         # Initialize settings
         self.settings = {
             'lightmodeOn': self.isLightModeOn.get(),
@@ -390,6 +402,13 @@ class gui(tk.Tk):
         for word in words:
             self.wordListbox.insert(tk.END, word)
 
+        # Reload amount label
+        self.updateRhymeCount()
+
+    def updateRhymeCount(self):
+        count = self.wordListbox.size()
+        self.countValuesLabel.config(text=f"number entries: {count}")
+
     def getLastNCharacters(self, word, number):
         return word[-number:]
 
@@ -608,6 +627,7 @@ class gui(tk.Tk):
         self.deleteListButton.config(fg=self.labelColor, bg=self.buttonColor)
         self.deleteWordButton.config(fg=self.labelColor, bg=self.buttonColor)
         self.wordListbox.config(bg=self.listboxColor, fg=self.labelColor)
+        self.countValuesLabel.config(bg=self.listboxColor, fg=self.labelColor)
 
 if __name__ == "__main__":
     app = gui()

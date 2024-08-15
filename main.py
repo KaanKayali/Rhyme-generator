@@ -207,12 +207,66 @@ class gui(tk.Tk):
         self.toggleLightmodeImage()
         self.saveSettings()
 
-    def allConstructFromWords(self, targetString, wordList, wordList2):
+    #def allConstructFromWords(self, targetString, wordList, wordList2):
+    #    # Preprocess remove dots
+    #    targetStringNoDot = targetString.replace('.', '')
+#
+    #    # Memoization dictionary
+    #    memo = {}
+#
+    #    def backtrack(currentTarget):
+    #        # Check memoization
+    #        if currentTarget in memo:
+    #            return memo[currentTarget]
+#
+    #        # Base case: reached the end of the current target segment
+    #        if currentTarget == '':
+    #            return [[]]  # List containing an empty combination (base case)
+#
+    #        allCombinations = []
+#
+    #        for index, word in enumerate(wordList):
+    #            # Check if the word fits the current position in the current target segment
+    #            if currentTarget.startswith(word.replace('.', '')):
+    #                # Continue to check the rest of the segment with the current word included
+    #                suffixCombinations = backtrack(currentTarget[len(word.replace('.', '')):])
+    #                for combination in suffixCombinations:
+    #                    allCombinations.append([index] + combination)  # Store indexes
+#
+    #        # Store in memoization dictionary
+    #        memo[currentTarget] = allCombinations
+    #        return allCombinations
+#
+    #    # Process the entire target string
+    #    segmentResults = backtrack(targetStringNoDot)
+    #    if not segmentResults:
+    #        return []  # If the target cannot be constructed, return an empty list
+#
+    #    # Combine results using wordList2
+    #    combinedResults = []
+#
+    #    def combine(segmentResult, path):
+    #        if not segmentResult:
+    #            combinedResults.append(' '.join(path))  # Use ' ' to join the final result
+    #            return
+#
+    #        for combination in segmentResult:
+    #            wordsFromList2 = [wordList2[i] for i in combination]
+    #            combine([], path + wordsFromList2)  # Process the next segment
+#
+    #    # Process each segment result
+    #    for segmentResult in segmentResults:
+    #        combine([segmentResult], [])
+#
+    #    return combinedResults
+
+    def allConstructFromWords(self, filteredWord, wordListfiltered, wordlist):
         # Preprocess remove dots
-        targetStringNoDot = targetString.replace('.', '')
+        targetStringNoDot = filteredWord.replace('.', '')
 
         # Memoization dictionary
         memo = {}
+        usedIndexes = set()
 
         def backtrack(currentTarget):
             # Check memoization
@@ -225,13 +279,20 @@ class gui(tk.Tk):
 
             allCombinations = []
 
-            for index, word in enumerate(wordList):
+            for index, word in enumerate(wordListfiltered):
                 # Check if the word fits the current position in the current target segment
-                if currentTarget.startswith(word.replace('.', '')):
+                if currentTarget.startswith(word.replace('.', '')) and index not in usedIndexes:
+                    # Mark the word as used
+                    usedIndexes.add(index)
+
                     # Continue to check the rest of the segment with the current word included
                     suffixCombinations = backtrack(currentTarget[len(word.replace('.', '')):])
                     for combination in suffixCombinations:
                         allCombinations.append([index] + combination)  # Store indexes
+
+                        # If this combination is valid, stop searching to avoid reusing the word
+                        if allCombinations:
+                            break
 
             # Store in memoization dictionary
             memo[currentTarget] = allCombinations
@@ -251,7 +312,7 @@ class gui(tk.Tk):
                 return
 
             for combination in segmentResult:
-                wordsFromList2 = [wordList2[i] for i in combination]
+                wordsFromList2 = [wordlist[i] for i in combination]
                 combine([], path + wordsFromList2)  # Process the next segment
 
         # Process each segment result
@@ -478,27 +539,29 @@ class gui(tk.Tk):
         inputStringIA = inputStringEI.replace('ia', 'a')
 
         # aa = ah = 5 | langes a
-        inputStringAA = inputStringIA.replace('aa', '5')
-        inputStringAH = inputStringAA.replace('ah', '5')
+        # inputStringAA = inputStringIA.replace('aa', '5')
+        # inputStringAH = inputStringAA.replace('ah', '5')
 
         # ee = eh = 6 | langes e exp. Kaffee
-        inputStringEE = inputStringAH.replace('ee', '6')
-        inputStringEH = inputStringEE.replace('eh', '6')
+        # inputStringEE = inputStringAH.replace('ee', '6')
+        # inputStringEH = inputStringEE.replace('eh', '6')
 
         # ai = e | exp. Training
-        inputStringAI = inputStringEH.replace('ai', 'e')
+        inputStringAI = inputStringIA.replace('ai', 'e')
 
         # English addition
         # ea = ä
         inputStringEA = inputStringAI.replace('ea', 'ä')
 
+        # ä = e
+        inputStringEA = inputStringAI.replace('ä', 'e')
+
         # er ending = a
-        # inputStringER = inputStringEA
-        # if len(inputStringER) >= 2:
-        #     erEnding = inputStringER[-2:]
-        #     if(erEnding == "er"):
-        #         inputStringER = inputStringER[:-2] + "a"
-        inputStringER = inputStringEA.replace('er', 'a')
+        inputStringER = inputStringEA
+        if len(inputStringER) >= 2:
+            erEnding = inputStringER[-2:]
+            if(erEnding == "er"):
+                inputStringER = inputStringER[:-2] + "a"
 
         lastString = inputStringER
 

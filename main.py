@@ -275,7 +275,6 @@ class gui(tk.Tk):
 
                 if(found):
                     #for index, word in enumerate(" ".join(matchedWord)):
-                    print(matchedWord);
                     return " ".join(matchedWord);
                 else:
                     return "";
@@ -509,7 +508,7 @@ class gui(tk.Tk):
         if self.selectedOption == "Vowel rhyme + consonant ending":
             consonantEnding = self.getEndingConsonants(inputString)
 
-        # Ausnahmen
+        # Exeptions
         inputString = inputString.replace('team', 'i');
         inputString = inputString.replace('training', 'e.i')
         inputString = inputString.replace('ferien', 'e.i.e')
@@ -521,8 +520,14 @@ class gui(tk.Tk):
         inputStringJ = inputStringIE.replace('j', 'i')
         inputStringY = inputStringJ.replace('y', 'i')
 
+        #io = o
+        inputStringIO = inputStringY.replace('io', 'o')
+
+        #iu = u
+        inputStringIU = inputStringIO.replace('iu', 'u')
+
         # eu = äu = 1
-        inputStringEU = inputStringY.replace('eu', '1')
+        inputStringEU = inputStringIU.replace('eu', '1')
         inputStringAU = inputStringEU.replace('äu', '1')
 
         # au = 2
@@ -534,9 +539,6 @@ class gui(tk.Tk):
         # ia = a
         inputStringIA = inputStringEI.replace('ia', 'a')
 
-        # aa = a
-        inputStringAA = inputStringIA.replace('aa', 'a')
-
 
 
         # English addition
@@ -544,13 +546,17 @@ class gui(tk.Tk):
         #inputStringEA = inputStringAA.replace('ea', 'ä')
 
         # ä = e
-        inputStringEAE = inputStringAA.replace('ä', 'e')
+        inputStringEAE = inputStringIA.replace('ä', 'e')
 
-        #ee = e
-        inputStringEE = inputStringEAE.replace('ee', 'e')
+        #aa = a | ee = e
+        inputStringAA = inputStringEAE.replace('aa', 'a')
+        inputStringEE = inputStringAA.replace('ee', 'e')
+
+        # ee = e
+        inputStringOU = inputStringEE.replace('ou', 'u')
 
         # er ending = a
-        inputStringER = inputStringEE
+        inputStringER = inputStringOU
         #if len(inputStringER) >= 2:
         #    erEnding = inputStringER[-2:]
         #    if(erEnding == "er"):
@@ -586,6 +592,14 @@ class gui(tk.Tk):
             return filteredString
 
     def reloadList(self):
+        #Delete button off when additional words is selected
+        self.checkWordSelection();
+        if self.withAdditionalwords:
+            self.deleteWordButton.config(state='normal')
+        else:
+            self.deleteWordButton.config(state='disabled')
+
+
         # Reload every filtered word
         self.everyWord = sorted(self.everyWord, key=str.lower)
         self.wordsInList = self.everyWord

@@ -199,6 +199,8 @@ class gui(tk.Tk):
         for instruction in instructions:
             self.wordListbox.insert(tk.END, instruction)
 
+        self.countValuesLabel.config(text=f"")
+
 
     def switchLightMode(self):
         currentValue = self.isLightModeOn.get()
@@ -207,119 +209,80 @@ class gui(tk.Tk):
         self.toggleLightmodeImage()
         self.saveSettings()
 
-    #def allConstructFromWords(self, targetString, wordList, wordList2):
-    #    # Preprocess remove dots
-    #    targetStringNoDot = targetString.replace('.', '')
-#
-    #    # Memoization dictionary
-    #    memo = {}
-#
-    #    def backtrack(currentTarget):
-    #        # Check memoization
-    #        if currentTarget in memo:
-    #            return memo[currentTarget]
-#
-    #        # Base case: reached the end of the current target segment
-    #        if currentTarget == '':
-    #            return [[]]  # List containing an empty combination (base case)
-#
-    #        allCombinations = []
-#
-    #        for index, word in enumerate(wordList):
-    #            # Check if the word fits the current position in the current target segment
-    #            if currentTarget.startswith(word.replace('.', '')):
-    #                # Continue to check the rest of the segment with the current word included
-    #                suffixCombinations = backtrack(currentTarget[len(word.replace('.', '')):])
-    #                for combination in suffixCombinations:
-    #                    allCombinations.append([index] + combination)  # Store indexes
-#
-    #        # Store in memoization dictionary
-    #        memo[currentTarget] = allCombinations
-    #        return allCombinations
-#
-    #    # Process the entire target string
-    #    segmentResults = backtrack(targetStringNoDot)
-    #    if not segmentResults:
-    #        return []  # If the target cannot be constructed, return an empty list
-#
-    #    # Combine results using wordList2
-    #    combinedResults = []
-#
-    #    def combine(segmentResult, path):
-    #        if not segmentResult:
-    #            combinedResults.append(' '.join(path))  # Use ' ' to join the final result
-    #            return
-#
-    #        for combination in segmentResult:
-    #            wordsFromList2 = [wordList2[i] for i in combination]
-    #            combine([], path + wordsFromList2)  # Process the next segment
-#
-    #    # Process each segment result
-    #    for segmentResult in segmentResults:
-    #        combine([segmentResult], [])
-#
-    #    return combinedResults
 
-    def allConstructFromWords(self, filteredWord, wordListfiltered, wordlist):
-        # Preprocess remove dots
-        targetStringNoDot = filteredWord.replace('.', '')
+    def allConstructFromWords(self, target, wordListfiltered, wordlist):
+        if target == "":
+            return [[]]  # Base case: If the target is an empty string, return an empty list
 
-        # Memoization dictionary
-        memo = {}
-        usedIndexes = set()
+        def stripSubstring(mainString, substring):
+            # Remove from the start if it exists
+            if mainString.startswith(substring):
+                mainString = mainString[len(substring):]
 
-        def backtrack(currentTarget):
-            # Check memoization
-            if currentTarget in memo:
-                return memo[currentTarget]
+            # Remove from the end if it exists
+            if mainString.endswith(substring):
+                mainString = mainString[:-len(substring)]
 
-            # Base case: reached the end of the current target segment
-            if currentTarget == '':
-                return [[]]  # List containing an empty combination (base case)
+            return mainString;
 
-            allCombinations = []
+        foundAdditionalWordslist = [];
 
-            for index, word in enumerate(wordListfiltered):
-                # Check if the word fits the current position in the current target segment
-                if currentTarget.startswith(word.replace('.', '')) and index not in usedIndexes:
-                    # Mark the word as used
-                    usedIndexes.add(index)
+        newWordListfiltered = [];
+        newWordlist = [];
 
-                    # Continue to check the rest of the segment with the current word included
-                    suffixCombinations = backtrack(currentTarget[len(word.replace('.', '')):])
-                    for combination in suffixCombinations:
-                        allCombinations.append([index] + combination)  # Store indexes
+        for word in wordListfiltered:
+            newWordListfiltered.append(word);
+        for word in wordlist:
+            newWordlist.append(word);
 
-                        # If this combination is valid, stop searching to avoid reusing the word
-                        if allCombinations:
-                            break
+        iterations = 0;
+        while iterations < len(newWordlist):
+            def backTrack(newTarget):
+                prevtarget = newTarget;
+                matchedWordfiltered = [];
+                matchedWord = [];
 
-            # Store in memoization dictionary
-            memo[currentTarget] = allCombinations
-            return allCombinations
+                found = False;
+                while True:
+                    wordsToRemoveFiltered = [];
+                    wordsToRemove = [];
 
-        # Process the entire target string
-        segmentResults = backtrack(targetStringNoDot)
-        if not segmentResults:
-            return []  # If the target cannot be constructed, return an empty list
+                    for i, word in enumerate(newWordListfiltered):
+                        if(newTarget.startswith(word)):
+                            matchedWordfiltered.append(word);
+                            wordsToRemoveFiltered.append(word);
+                            matchedWord.append(newWordlist[i]);
+                            wordsToRemove.append(newWordlist[i]);
 
-        # Combine results using wordList2
-        combinedResults = []
+                            newTarget = newTarget[len(word):]
+                            newTarget = stripSubstring(newTarget, ".");
 
-        def combine(segmentResult, path):
-            if not segmentResult:
-                combinedResults.append(' '.join(path))  # Use ' ' to join the final result
-                return
+                            if(".".join(matchedWordfiltered) == prevtarget):
+                                found = True;
+                                break;
 
-            for combination in segmentResult:
-                wordsFromList2 = [wordlist[i] for i in combination]
-                combine([], path + wordsFromList2)  # Process the next segment
+                    # Remove from lists
+                    for word in wordsToRemoveFiltered:
+                        newWordListfiltered.remove(word);
+                    for word in wordsToRemove:
+                        newWordlist.remove(word);
 
-        # Process each segment result
-        for segmentResult in segmentResults:
-            combine([segmentResult], [])
+                    #None found
+                    break;
 
-        return combinedResults
+                if(found):
+                    return " ".join(matchedWord);
+                else:
+                    return "";
+
+            word = backTrack(target);
+            if(word != ""):
+                foundAdditionalWordslist.append(word);
+            else:
+                iterations += 1;
+
+
+        return foundAdditionalWordslist;
 
 
     def deleteList(self):
@@ -358,6 +321,7 @@ class gui(tk.Tk):
         selectedIndex = self.wordListbox.curselection()
         index = selectedIndex[0]
         value = self.wordsInList[index]
+        print(value)
 
         questionResult = messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete {value}?")
 
@@ -477,35 +441,22 @@ class gui(tk.Tk):
         return word[:-number] if number != 0 else word
 
     def updateWordsInList(self, userWord, filteredWord):
-        if not self.withAdditionalwords.get():
-            filteredList = []
+        filteredList = []
 
-            for word, filtered in zip(self.everyWord, self.everyWordFiltered):
-                # if self.getLastNCharacters(filtered, len(filteredWord)) == filteredWord:
-                if filtered == filteredWord:
-                    # Remove whitespace
-                    cleanedWord = word.replace(' ', '')
-                    filteredList.append(cleanedWord)
+        for word, filtered in zip(self.everyWord, self.everyWordFiltered):
+            # if self.getLastNCharacters(filtered, len(filteredWord)) == filteredWord:
+            if filtered == filteredWord:
+                # Remove whitespace
+                cleanedWord = word.replace(' ', '')
+                filteredList.append(cleanedWord)
 
-
-            return filteredList
-
-        else:
+        if self.withAdditionalwords.get():
             # Additional words
-            filteredList = []
-
-            for word, filtered in zip(self.everyWord, self.everyWordFiltered):
-                # if self.getLastNCharacters(filtered, len(filteredWord)) == filteredWord:
-                if filtered == filteredWord:
-                    # Remove whitespace
-                    cleanedWord = word.replace(' ', '')
-                    filteredList.append(cleanedWord)
-
             additionalwords = self.allConstructFromWords(filteredWord, self.everyWordFiltered, self.everyWord)
             for word in additionalwords:
                 filteredList.append(word)
 
-            return filteredList
+        return filteredList;
 
     def onComboSelected(self, event):
         self.selectedOption = self.combo.get()
@@ -558,11 +509,11 @@ class gui(tk.Tk):
 
         # er ending = a
         inputStringER = inputStringEA
-        if len(inputStringER) >= 2:
-            erEnding = inputStringER[-2:]
-            if(erEnding == "er"):
-                inputStringER = inputStringER[:-2] + "a"
-
+        #if len(inputStringER) >= 2:
+        #    erEnding = inputStringER[-2:]
+        #    if(erEnding == "er"):
+        #        inputStringER = inputStringER[:-2] + "a"
+#
         lastString = inputStringER
 
         # Remove consonants

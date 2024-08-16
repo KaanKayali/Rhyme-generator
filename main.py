@@ -22,6 +22,7 @@ class gui(tk.Tk):
         self.loadFileName = "loadwords.txt"
         self.isLightModeOn = tk.BooleanVar(value=True)
         self.charsToAdd = "aeiouäüö1234567890"
+        self.keypressTimer = None;
 
         # Fonts
         self.titleFont = font.Font(family="Comic Sans MS", size=18, weight="bold")
@@ -64,7 +65,7 @@ class gui(tk.Tk):
 
         # Textfield
         self.entry = tk.Entry(self, font=self.inputFont, fg=self.labelColor, bg=self.textboxColor)
-        self.entry.bind("<KeyRelease>", self.onKeypressed)
+        self.entry.bind("<KeyRelease>", self.onKeyreleased)
         self.entry.grid(column=0, row=1, sticky='new', padx=8)
 
         # Combobox
@@ -252,6 +253,7 @@ class gui(tk.Tk):
                         if(newTarget.startswith(word)):
                             matchedWordfiltered.append(word);
                             wordsToRemoveFiltered.append(word);
+
                             matchedWord.append(newWordlist[i]);
                             wordsToRemove.append(newWordlist[i]);
 
@@ -264,14 +266,16 @@ class gui(tk.Tk):
 
                     # Remove from lists
                     for word in wordsToRemoveFiltered:
-                        newWordListfiltered.remove(word);
-                    for word in wordsToRemove:
-                        newWordlist.remove(word);
+                        if word in newWordListfiltered:
+                            index = newWordListfiltered.index(word)
+                            newWordListfiltered.pop(index)
+                            newWordlist.pop(index)
 
-                    #None found
                     break;
 
                 if(found):
+                    #for index, word in enumerate(" ".join(matchedWord)):
+                    print(matchedWord);
                     return " ".join(matchedWord);
                 else:
                     return "";
@@ -322,7 +326,6 @@ class gui(tk.Tk):
         selectedIndex = self.wordListbox.curselection()
         index = selectedIndex[0]
         value = self.wordsInList[index]
-        print(value)
 
         questionResult = messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete {value}?")
 
@@ -506,6 +509,13 @@ class gui(tk.Tk):
         if self.selectedOption == "Vowel rhyme + consonant ending":
             consonantEnding = self.getEndingConsonants(inputString)
 
+        # Ausnahmen
+        inputString = inputString.replace('team', 'i');
+        inputString = inputString.replace('training', 'e.i')
+        inputString = inputString.replace('ferien', 'e.i.e')
+        #inputString = inputString.replace('computer', 'o.i.u.e')
+        inputString = inputString.replace('fair', 'ä')
+
         # i = ie = j = y
         inputStringIE = inputString.replace('ie', 'i')
         inputStringJ = inputStringIE.replace('j', 'i')
@@ -524,23 +534,17 @@ class gui(tk.Tk):
         # ia = a
         inputStringIA = inputStringEI.replace('ia', 'a')
 
-        # aa = ah = 5 | langes a
-        # inputStringAA = inputStringIA.replace('aa', '5')
-        # inputStringAH = inputStringAA.replace('ah', '5')
+        # aa = a
+        inputStringAA = inputStringIA.replace('aa', 'a')
 
-        # ee = eh = 6 | langes e exp. Kaffee
-        # inputStringEE = inputStringAH.replace('ee', '6')
-        # inputStringEH = inputStringEE.replace('eh', '6')
 
-        # ai = e | exp. Training
-        inputStringAI = inputStringIA.replace('ai', 'e')
 
         # English addition
         # ea = ä
-        inputStringEA = inputStringAI.replace('ea', 'ä')
+        #inputStringEA = inputStringAA.replace('ea', 'ä')
 
         # ä = e
-        inputStringEAE = inputStringEA.replace('ä', 'e')
+        inputStringEAE = inputStringAA.replace('ä', 'e')
 
         #ee = e
         inputStringEE = inputStringEAE.replace('ee', 'e')
@@ -591,7 +595,7 @@ class gui(tk.Tk):
 
         # Reload user Input
         self.userInput = self.entry.get()
-        if self.userInput != "":
+        if any(char in self.charsToAdd for char in self.userInput):
             self.filteredInput = self.removeConsonants(self.userInput)
             self.updateListbox(self.updateWordsInList(self.userInput, self.filteredInput))
         else:
@@ -611,19 +615,18 @@ class gui(tk.Tk):
         else:
             self.lightmodeButton.config(image=self.imgMoon)
 
+    def onKeyreleased(self, event):
+        # Cancel the previous timer if it exists
+        if self.keypressTimer is not None:
+            self.after_cancel(self.keypressTimer)
 
-    def onKeypressed(self, event):
+        # Set a new timer to call the function after a delay
+        self.keypressTimer = self.after(500, self.onKeypressed)  # 500 milliseconds = 0.5 seconds
+
+
+    def onKeypressed(self):
         # Everytime when key gets hit
-        self.userInput = self.entry.get()
-        if any(char in self.charsToAdd for char in self.userInput):
-            self.filteredInput = self.removeConsonants(self.userInput)
-            self.updateListbox(self.updateWordsInList(self.userInput, self.filteredInput))
-        else:
-            self.updateListbox(self.wordsInList)
-
-        # List empty?
-        if(self.everyWord == []):
-            self.checkListboxEmpty()
+        self.reloadList();
 
     def loadWords(self):
         if os.path.exists(self.loadFileName):

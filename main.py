@@ -2,6 +2,7 @@
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, font, PhotoImage
 import re
+import PyPDF2
 import os
 import json
 
@@ -84,7 +85,7 @@ class gui(tk.Tk):
         self.checkWithAdditionalwords.grid(column=0, row=2, sticky='ne', padx=8)
 
         # Add list
-        self.chooseFileButton = tk.Button(self, text="Add a list (txt)", command=self.chooseFile, font=self.buttonFont, fg=self.labelColor, bg=self.buttonColor)
+        self.chooseFileButton = tk.Button(self, text="Add a list (txt/PDF)", command=self.chooseFile, font=self.buttonFont, fg=self.labelColor, bg=self.buttonColor)
         self.chooseFileButton.grid(column=1, row=0, sticky='w')
 
         # Toggle Lightmode button
@@ -335,9 +336,9 @@ class gui(tk.Tk):
         self.checkWordSelection()
 
     def chooseFile(self):
-        # Open file dialog | Only .txt
+        # Open file dialog | Only .txt and .pdf files
         filePaths = filedialog.askopenfilenames(
-            filetypes=[("Text Files", "*.txt")],
+            filetypes=[("Text Files", "*.txt"), ("PDF Files", "*.pdf")],
             defaultextension=".txt"
         )
 
@@ -347,6 +348,8 @@ class gui(tk.Tk):
             for filePath in filePaths:
                 if filePath.endswith('.txt'):
                     self.extractWordsFromFile(filePath)
+                elif filePath.endswith('.pdf'):
+                    self.extractWordsFromPDF(filePath)
 
             amountFiles = len(filePaths)
 
@@ -403,6 +406,38 @@ class gui(tk.Tk):
 
         except Exception as error:
             messagebox.showerror("Error", f"An error occurred while reading the file: {error}")
+
+    def extractWordsFromPDF(self, filePath):
+        try:
+            # Read PDF file
+            with open(filePath, 'rb') as file:
+                reader = PyPDF2.PdfReader(file)
+                content = ""
+                for page in range(len(reader.pages)):
+                    content += reader.pages[page].extract_text()
+
+            # Regex -> commas, spaces, in quotes
+            words = re.findall(r'"(.*?)"|(\b(?!\w*\d)\w+\b)', content)
+            fileWordList = [word for sublist in words for word in sublist if word]
+
+            for word in fileWordList:
+                if word.lower() not in (existingWord.lower() for existingWord in self.everyWord):
+                    if (self.checkIfWord(word)):
+                        self.everyWord.append(word)
+                        self.amountOfAddedWords += 1
+                    else:
+                        self.amountOfUnconsideredWords += 1
+                else:
+                    self.amountOfDuplicates += 1
+
+            # Reload list
+            self.reloadList()
+
+            # Save new words in textfile
+            self.saveWords(self.everyWord)
+
+        except Exception as error:
+            messagebox.showerror("Error", f"An error occurred while reading the PDF file: {error}")
 
     def saveWords(self, newWords):
         # Save new words in loadwords.txt
@@ -505,10 +540,13 @@ class gui(tk.Tk):
         inputStringEA = inputStringAI.replace('ea', 'ä')
 
         # ä = e
-        inputStringEA = inputStringAI.replace('ä', 'e')
+        inputStringEAE = inputStringEA.replace('ä', 'e')
+
+        #ee = e
+        inputStringEE = inputStringEAE.replace('ee', 'e')
 
         # er ending = a
-        inputStringER = inputStringEA
+        inputStringER = inputStringEE
         #if len(inputStringER) >= 2:
         #    erEnding = inputStringER[-2:]
         #    if(erEnding == "er"):

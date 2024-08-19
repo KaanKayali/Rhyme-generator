@@ -69,11 +69,12 @@ class gui(tk.Tk):
         self.entry.grid(column=0, row=1, sticky='new', padx=8)
 
         # Combobox
-        self.combo = ttk.Combobox(self, values=["Vowel rhyme", "Vowel rhyme + consonant ending"], font=self.comboboxFont)
+        self.combo = ttk.Combobox(self, values=["Vowel rhyme", "Vowel rhyme + consonant ending", "Classic rhyme"], font=self.comboboxFont)
         self.combo.config(state="readonly")
         self.combo.bind("<<ComboboxSelected>>", self.onComboSelected)
         self.combo.current(0)
         self.combo.grid(column=0, row=2, sticky='ew', padx=8)
+        self.selectedOption = self.combo.get()
 
         # Checkbutton
         self.isPerfectRhyme = tk.BooleanVar(value=False)
@@ -505,8 +506,10 @@ class gui(tk.Tk):
 
         # if consonant ending
         consonantEnding = ""
-        if self.selectedOption == "Vowel rhyme + consonant ending":
+        if self.selectedOption == "Vowel rhyme + consonant ending" or self.selectedOption == "Classic rhyme":
             consonantEnding = self.getEndingConsonants(inputString)
+            consonantsBetweenLastTwoVowels = self.getConsonantsBetweenLastTwoVowels(inputString)
+
 
         # Exeptions
         inputString = inputString.replace('team', 'i');
@@ -520,14 +523,8 @@ class gui(tk.Tk):
         inputStringJ = inputStringIE.replace('j', 'i')
         inputStringY = inputStringJ.replace('y', 'i')
 
-        #io = o
-        inputStringIO = inputStringY.replace('io', 'o')
-
-        #iu = u
-        inputStringIU = inputStringIO.replace('iu', 'u')
-
         # eu = äu = 1
-        inputStringEU = inputStringIU.replace('eu', '1')
+        inputStringEU = inputStringY.replace('eu', '1')
         inputStringAU = inputStringEU.replace('äu', '1')
 
         # au = 2
@@ -536,17 +533,12 @@ class gui(tk.Tk):
         # ei = 3
         inputStringEI = inputStringAU2.replace('ei', '3')
 
-        # ia = a
-        inputStringIA = inputStringEI.replace('ia', 'a')
-
-
-
         # English addition
         # ea = ä
         #inputStringEA = inputStringAA.replace('ea', 'ä')
 
         # ä = e
-        inputStringEAE = inputStringIA.replace('ä', 'e')
+        inputStringEAE = inputStringEI.replace('ä', 'e')
 
         #aa = a | ee = e
         inputStringAA = inputStringEAE.replace('aa', 'a')
@@ -561,7 +553,7 @@ class gui(tk.Tk):
         #    erEnding = inputStringER[-2:]
         #    if(erEnding == "er"):
         #        inputStringER = inputStringER[:-2] + "a"
-#
+    #
         lastString = inputStringER
 
         # Remove consonants
@@ -580,6 +572,16 @@ class gui(tk.Tk):
         if self.selectedOption == "Vowel rhyme + consonant ending":
             filteredString += consonantEnding
 
+        # Classic rhyme | Only last vowel + consonant ending
+        if self.selectedOption == "Classic rhyme":
+            secondLastChar = ''
+            if(len(filteredString) > 1):
+                secondLastChar = filteredString[-2]
+
+            print(consonantsBetweenLastTwoVowels)
+            classicString = secondLastChar + consonantsBetweenLastTwoVowels + filteredString[-1] + consonantEnding;
+            filteredString = classicString;
+
         # Checkbox checked?
         if (self.isPerfectRhyme.get()):
             # Return string
@@ -588,8 +590,33 @@ class gui(tk.Tk):
             # Not perfect means i=e, o=u
             step1 = filteredString.replace('i', 'e')
             step2 = step1.replace('o', 'u')
-            filteredString = step2
+
+            # ia = a
+            step3 = step2.replace('ia', 'a')
+
+            # io = o
+            step4 = step3.replace('io', 'o')
+
+            # iu = u
+            step5 = step4.replace('iu', 'u')
+
+            filteredString = step5
             return filteredString
+
+    def getConsonantsBetweenLastTwoVowels(self, word):
+        # Find all vowels in the last syllable
+        vowels = [match.start() for match in re.finditer(r'[aeiouäü]', word, flags=re.IGNORECASE)]
+
+        # Check if there are at least two vowels
+        if len(vowels) >= 2:
+            # Get the substring between the last two vowels
+            consonants = word[vowels[-2] + 1: vowels[-1]]
+            # Remove any vowels that may be in this substring
+            consonants = re.sub(r'[aeiouäü]', '', consonants, flags=re.IGNORECASE)
+            return consonants
+
+        # Return an empty string if there are not enough vowels
+        return ''
 
     def reloadList(self):
         #Delete button off when additional words is selected
@@ -640,6 +667,7 @@ class gui(tk.Tk):
 
     def onKeypressed(self):
         # Everytime when key gets hit
+        self.selectedOption = self.combo.get()
         self.reloadList();
 
     def loadWords(self):
@@ -664,6 +692,7 @@ class gui(tk.Tk):
         # Remove vowels
         consonants = re.sub(r'[aeiouäü]', '', lastSyllable, flags=re.IGNORECASE)
         return consonants
+
 
     def updateColors(self):
         # Colors

@@ -314,6 +314,9 @@ class gui(tk.Tk):
 
     def onListWordSelected(self, event):
         self.checkWordSelection()
+        self.deleteWordButton.config(state='normal')
+        if self.withAdditionalwords.get():
+            self.deleteWordButton.config(state='disabled')
 
     def checkWordSelection(self):
         selectedIndex = self.wordListbox.curselection()
@@ -484,15 +487,17 @@ class gui(tk.Tk):
         for word, filtered in zip(self.everyWord, self.everyWordFiltered):
             # if self.getLastNCharacters(filtered, len(filteredWord)) == filteredWord:
             if filtered == filteredWord:
-                # Remove whitespace
-                cleanedWord = word.replace(' ', '')
-                filteredList.append(cleanedWord)
+                if (word.lower() != userWord.lower()):
+                    # Remove whitespace
+                    cleanedWord = word.replace(' ', '')
+                    filteredList.append(cleanedWord)
 
         if self.withAdditionalwords.get():
             # Additional words
             additionalwords = self.allConstructFromWords(filteredWord, self.everyWordFiltered, self.everyWord)
             for word in additionalwords:
-                filteredList.append(word)
+                if(word.lower() != userWord.lower()):
+                    filteredList.append(word)
 
         return filteredList;
 
@@ -503,12 +508,11 @@ class gui(tk.Tk):
     def removeConsonants(self, inputString):
         resultString = []
         inputString = inputString.lower()
-
+        print(inputString)
         # if consonant ending
         consonantEnding = ""
         if self.selectedOption == "Vowel rhyme + consonant ending" or self.selectedOption == "Classic rhyme":
             consonantEnding = self.getEndingConsonants(inputString)
-            consonantsBetweenLastTwoVowels = self.getConsonantsBetweenLastTwoVowels(inputString)
 
 
         # Exeptions
@@ -576,32 +580,29 @@ class gui(tk.Tk):
         if self.selectedOption == "Classic rhyme":
             secondLastChar = ''
             if(len(filteredString) > 1):
-                secondLastChar = filteredString[-2]
+                secondLastChar = filteredString[-3]
 
-            print(consonantsBetweenLastTwoVowels)
-            classicString = secondLastChar + consonantsBetweenLastTwoVowels + filteredString[-1] + consonantEnding;
+            classicString = secondLastChar + filteredString[-1] + consonantEnding;
             filteredString = classicString;
 
         # Checkbox checked?
-        if (self.isPerfectRhyme.get()):
-            # Return string
-            return filteredString
-        else:
+        if not self.isPerfectRhyme.get():
             # Not perfect means i=e, o=u
-            step1 = filteredString.replace('i', 'e')
-            step2 = step1.replace('o', 'u')
-
             # ia = a
-            step3 = step2.replace('ia', 'a')
+            step1 = filteredString.replace('ia', 'a')
 
             # io = o
-            step4 = step3.replace('io', 'o')
+            step2 = step1.replace('io', 'o')
 
             # iu = u
-            step5 = step4.replace('iu', 'u')
+            step3 = step2.replace('iu', 'u')
+
+            step4 = step3.replace('i', 'e')
+            step5 = step4.replace('o', 'u')
 
             filteredString = step5
-            return filteredString
+        print(filteredString)
+        return filteredString
 
     def getConsonantsBetweenLastTwoVowels(self, word):
         # Find all vowels in the last syllable
@@ -621,9 +622,8 @@ class gui(tk.Tk):
     def reloadList(self):
         #Delete button off when additional words is selected
         self.checkWordSelection();
-        if self.withAdditionalwords:
-            self.deleteWordButton.config(state='normal')
-        else:
+        self.deleteWordButton.config(state='normal')
+        if self.withAdditionalwords.get():
             self.deleteWordButton.config(state='disabled')
 
 

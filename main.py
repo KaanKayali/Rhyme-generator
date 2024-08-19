@@ -324,13 +324,13 @@ class gui(tk.Tk):
     def deleteWord(self):
         selectedIndex = self.wordListbox.curselection()
         index = selectedIndex[0]
-        value = self.wordsInList[index]
+        value = self.wordListbox.get(0, tk.END)[index]
 
         questionResult = messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete {value}?")
 
         if(questionResult):
             self.wordListbox.delete(index)
-            del self.everyWord[index]
+            self.everyWord.remove(value)
             self.reloadList()
             self.saveWords(self.everyWord)
             messagebox.showinfo("Cleared", f"{value} has been deleted.")

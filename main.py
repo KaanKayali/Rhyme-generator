@@ -22,7 +22,7 @@ class gui(tk.Tk):
         self.loadFileName = "loadwords.txt"
         self.isLightModeOn = tk.BooleanVar(value=True)
         self.charsToAdd = "aeiouäüö1234567890"
-        self.keypressTimer = None;
+        self.keypressTimer = None
 
         # Fonts
         self.titleFont = font.Font(family="Comic Sans MS", size=18, weight="bold")
@@ -226,44 +226,44 @@ class gui(tk.Tk):
             if mainString.endswith(substring):
                 mainString = mainString[:-len(substring)]
 
-            return mainString;
+            return mainString
 
-        foundAdditionalWordslist = [];
+        foundAdditionalWordslist = []
 
-        newWordListfiltered = [];
-        newWordlist = [];
+        newWordListfiltered = []
+        newWordlist = []
 
         for word in wordListfiltered:
-            newWordListfiltered.append(word);
+            newWordListfiltered.append(word)
         for word in wordlist:
-            newWordlist.append(word);
+            newWordlist.append(word)
 
-        iterations = 0;
+        iterations = 0
         while iterations < len(newWordlist):
             def backTrack(newTarget):
-                prevtarget = newTarget;
-                matchedWordfiltered = [];
-                matchedWord = [];
+                prevtarget = newTarget
+                matchedWordfiltered = []
+                matchedWord = []
 
-                found = False;
+                found = False
                 while True:
-                    wordsToRemoveFiltered = [];
-                    wordsToRemove = [];
+                    wordsToRemoveFiltered = []
+                    wordsToRemove = []
 
                     for i, word in enumerate(newWordListfiltered):
                         if(newTarget.startswith(word)):
-                            matchedWordfiltered.append(word);
-                            wordsToRemoveFiltered.append(word);
+                            matchedWordfiltered.append(word)
+                            wordsToRemoveFiltered.append(word)
 
-                            matchedWord.append(newWordlist[i]);
-                            wordsToRemove.append(newWordlist[i]);
+                            matchedWord.append(newWordlist[i])
+                            wordsToRemove.append(newWordlist[i])
 
                             newTarget = newTarget[len(word):]
-                            newTarget = stripSubstring(newTarget, ".");
+                            newTarget = stripSubstring(newTarget, ".")
 
                             if(".".join(matchedWordfiltered) == prevtarget):
-                                found = True;
-                                break;
+                                found = True
+                                break
 
                     # Remove from lists
                     for word in wordsToRemoveFiltered:
@@ -272,22 +272,22 @@ class gui(tk.Tk):
                             newWordListfiltered.pop(index)
                             newWordlist.pop(index)
 
-                    break;
+                    break
 
                 if(found):
                     #for index, word in enumerate(" ".join(matchedWord)):
-                    return " ".join(matchedWord);
+                    return " ".join(matchedWord)
                 else:
-                    return "";
+                    return ""
 
-            word = backTrack(target);
+            word = backTrack(target)
             if(word != ""):
-                foundAdditionalWordslist.append(word);
+                foundAdditionalWordslist.append(word)
             else:
-                iterations += 1;
+                iterations += 1
 
 
-        return foundAdditionalWordslist;
+        return foundAdditionalWordslist
 
 
     def deleteList(self):
@@ -499,7 +499,7 @@ class gui(tk.Tk):
                 if(word.lower() != userWord.lower()):
                     filteredList.append(word)
 
-        return filteredList;
+        return filteredList
 
     def onComboSelected(self, event):
         self.selectedOption = self.combo.get()
@@ -516,7 +516,7 @@ class gui(tk.Tk):
 
 
         # Exeptions
-        inputString = inputString.replace('team', 'i');
+        inputString = inputString.replace('team', 'i')
         inputString = inputString.replace('training', 'e.i')
         inputString = inputString.replace('ferien', 'e.i.e')
         #inputString = inputString.replace('computer', 'o.i.u.e')
@@ -582,8 +582,8 @@ class gui(tk.Tk):
             if(len(filteredString) > 1):
                 secondLastChar = filteredString[-3]
 
-            classicString = secondLastChar + filteredString[-1] + consonantEnding;
-            filteredString = classicString;
+            classicString = secondLastChar + filteredString[-1] + consonantEnding
+            filteredString = classicString
 
         # Checkbox checked?
         if not self.isPerfectRhyme.get():
@@ -621,7 +621,7 @@ class gui(tk.Tk):
 
     def reloadList(self):
         #Delete button off when additional words is selected
-        self.checkWordSelection();
+        self.checkWordSelection()
         self.deleteWordButton.config(state='normal')
         if self.withAdditionalwords.get():
             self.deleteWordButton.config(state='disabled')
@@ -668,7 +668,7 @@ class gui(tk.Tk):
     def onKeypressed(self):
         # Everytime when key gets hit
         self.selectedOption = self.combo.get()
-        self.reloadList();
+        self.reloadList()
 
     def loadWords(self):
         if os.path.exists(self.loadFileName):

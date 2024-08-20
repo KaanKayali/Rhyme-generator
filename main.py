@@ -297,9 +297,15 @@ class gui(tk.Tk):
 
                 if(found):
                     #for index, word in enumerate(" ".join(matchedWord)):
+
+                    #One word = X
+                    if(len(matchedWord) == 1):
+                        return ""
+
+                    #Multiple words
                     return " ".join(matchedWord)
-                else:
-                    return ""
+
+                return ""
 
             word = backTrack(target)
             if(word != ""):
@@ -607,8 +613,22 @@ class gui(tk.Tk):
         #    erEnding = inputStringER[-2:]
         #    if(erEnding == "er"):
         #        inputStringER = inputStringER[:-2] + "a"
-    #
-        lastString = inputStringER
+        #
+
+        perfectstring = inputStringER;
+        if not self.isPerfectRhyme.get():
+            # ia = a
+            step1 = perfectstring.replace('ia', 'a')
+
+            # io = o
+            step2 = step1.replace('io', 'o')
+
+            # iu = u
+            step3 = step2.replace('iu', 'u')
+            perfectstring = step3
+
+        #Done
+        lastString = perfectstring
 
         # Remove consonants
         inputString = lastString
@@ -638,19 +658,10 @@ class gui(tk.Tk):
         # Checkbox checked?
         if not self.isPerfectRhyme.get():
             # Not perfect means i=e, o=u
-            # ia = a
-            step1 = filteredString.replace('ia', 'a')
+            step1 = filteredString.replace('i', 'e')
+            step2 = step1.replace('o', 'u')
 
-            # io = o
-            step2 = step1.replace('io', 'o')
-
-            # iu = u
-            step3 = step2.replace('iu', 'u')
-
-            step4 = step3.replace('i', 'e')
-            step5 = step4.replace('o', 'u')
-
-            filteredString = step5
+            filteredString = step2
         return filteredString
 
     def getConsonantsBetweenLastTwoVowels(self, word):

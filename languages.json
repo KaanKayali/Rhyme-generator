@@ -1,0 +1,28 @@
+{
+    "german": [
+        {
+            "title": "Reimgenerator",
+            "copyright": "Von ©SohleKNKI",
+            "rhymecombo": ["Vokalreim", "Vokalreim + Konsonanten-Ende", "Klassischer Reim"],
+            "checkPerfectRhyme": "Perfekte Reime",
+            "checkWithAdditionalwords": "Zusätzliche Wörter",
+            "chooseFile": "Liste hinzufügen (txt/PDF)",
+            "deleteList": "Liste löschen",
+            "deleteWord": "Wort löschen",
+            "countValues": "Anzahl Einträge"
+        }
+    ],
+    "english": [
+        {
+            "title": "Rhyme generator",
+            "copyright": "Made by ©SohleKNKI",
+            "rhymecombo": ["Vowel rhyme", "Vowel rhyme + consonant ending", "Classic rhyme"],
+            "checkPerfectRhyme": "Perfect rhymes",
+            "checkWithAdditionalwords": "Additional words",
+            "chooseFile": "Add a list (txt/PDF)",
+            "deleteList": "Delete list",
+            "deleteWord": "Delete word",
+            "countValues": "number entries"
+        }
+    ]
+}

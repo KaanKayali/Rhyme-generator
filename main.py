@@ -23,6 +23,10 @@ class gui(tk.Tk):
         self.isLightModeOn = tk.BooleanVar(value=True)
         self.charsToAdd = "aeiouäüö1234567890"
         self.keypressTimer = None
+        self.languagesFile = 'languages.json'
+        self.languagesData = None;
+        self.selectedLanguage = "german"
+
 
         # Fonts
         self.titleFont = font.Font(family="Comic Sans MS", size=18, weight="bold")
@@ -48,8 +52,9 @@ class gui(tk.Tk):
 
         # Grid
         self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=1)
-        self.columnconfigure(2, weight=2)
+        self.columnconfigure(1, weight=0)
+        self.columnconfigure(2, weight=0)
+        self.columnconfigure(3, weight=1)
         self.rowconfigure(0, weight=1)
         self.rowconfigure(1, weight=1)
         self.rowconfigure(2, weight=1)
@@ -57,64 +62,73 @@ class gui(tk.Tk):
 
         # Title
         self.titleLabel = tk.Label(self, text="Rhyme generator", font=self.titleFont, fg=self.labelColor)
-        self.titleLabel.grid(column=0, row=0, sticky='wn', padx=8, pady=(18, 0))
+        self.titleLabel.grid(column=0, columnspan=2, row=0, sticky='w', padx=8, pady=(0, 8))
 
         # Copyright
         self.copyrightLabel = tk.Label(self, text="Made by ©SohleKNKI", font=self.copyrightFont, fg=self.labelColor)
-        self.copyrightLabel.grid(column=0, row=0, sticky='ws', padx=8, pady=(0, 6))
+        self.copyrightLabel.grid(column=0, columnspan=2, row=0, sticky='ws', padx=8)
 
         # Textfield
         self.entry = tk.Entry(self, font=self.inputFont, fg=self.labelColor, bg=self.textboxColor)
         self.entry.bind("<KeyRelease>", self.onKeyreleased)
-        self.entry.grid(column=0, row=1, sticky='new', padx=8)
+        self.entry.grid(column=0, row=1, columnspan=2, sticky='new', padx=8)
 
         # Combobox
         self.combo = ttk.Combobox(self, values=["Vowel rhyme", "Vowel rhyme + consonant ending", "Classic rhyme"], font=self.comboboxFont)
         self.combo.config(state="readonly")
         self.combo.bind("<<ComboboxSelected>>", self.onComboSelected)
         self.combo.current(0)
-        self.combo.grid(column=0, row=2, sticky='ew', padx=8)
+        self.combo.grid(column=0, columnspan=2, row=2, sticky='ew', padx=8)
         self.selectedOption = self.combo.get()
+
+        # Combobox language
+        self.languageCombo = ttk.Combobox(self, values=["Deutsch", "English"],
+                                  font=self.comboboxFont)
+        self.languageCombo.config(state="readonly")
+        self.languageCombo.bind("<<ComboboxSelected>>", self.onComboLanguageSelected)
+        self.languageCombo.current(0)
+        self.languageCombo.grid(column=0, columnspan=2, row=3, sticky='wn', padx=8)
+        self.selectedLanguageOption = self.languageCombo.get()
 
         # Checkbutton
         self.isPerfectRhyme = tk.BooleanVar(value=False)
         self.checkPerfectRhyme = tk.Checkbutton(self, text="Perfect rhymes", variable=self.isPerfectRhyme, command=self.reloadList)
-        self.checkPerfectRhyme.grid(column=0, row=1, sticky='e', padx=8)
+        self.checkPerfectRhyme.grid(column=1, columnspan=1, row=1, sticky='e', padx=8)
 
         # Additional words
         self.withAdditionalwords = tk.BooleanVar()
         self.checkWithAdditionalwords = tk.Checkbutton(self, text="Additional words", variable=self.withAdditionalwords, command=self.reloadList)
-        self.checkWithAdditionalwords.grid(column=0, row=2, sticky='ne', padx=8)
+        self.checkWithAdditionalwords.grid(column=1, columnspan=1, row=2, sticky='ne', padx=8)
 
         # Add list
         self.chooseFileButton = tk.Button(self, text="Add a list (txt/PDF)", command=self.chooseFile, font=self.buttonFont, fg=self.labelColor, bg=self.buttonColor)
-        self.chooseFileButton.grid(column=1, row=0, sticky='w')
+        self.chooseFileButton.grid(column=2, row=0, sticky='w')
 
         # Toggle Lightmode button
         self.lightmodeButton = tk.Button(self, text="Lightmode", image=self.imgSun ,command=self.switchLightMode, font=self.buttonFont)
-        self.lightmodeButton.grid(column=2, row=0, sticky='e', padx=(0, 8))
+        self.lightmodeButton.grid(column=3, row=0, sticky='e', padx=(0, 8))
 
         # Delete list button
         self.deleteListButton = tk.Button(self, text="Delete list", command=self.deleteList, font=self.buttonFont, fg=self.labelColor, bg=self.buttonColor)
-        self.deleteListButton.grid(column=0, row=3, sticky='ws', padx=(8, 0), pady=(0, 8))
+        self.deleteListButton.grid(column=0, columnspan=1, row=4, sticky='ws', padx=(8, 0), pady=(0, 8))
 
         # Delete word button
         self.deleteWordButton = tk.Button(self, text="Delete word", command=self.deleteWord, font=self.buttonFont,fg=self.labelColor, bg=self.buttonColor)
-        self.deleteWordButton.grid(column=0, row=3, sticky='s', padx=(8, 0), pady=(0, 8))
+        self.deleteWordButton.grid(column=1, columnspan=1, row=4, sticky='es', padx=(0, 8), pady=(0, 8))
         self.deleteWordButton.config(state='disabled')
 
         # Listbox
         self.wordListbox = tk.Listbox(self, font=self.listFont)
-        self.wordListbox.grid(column=1, row=1, rowspan=3, columnspan=2, sticky='nesw', padx=(0, 8), pady=(0, 8))
+        self.wordListbox.grid(column=2, row=1, rowspan=4, columnspan=2, sticky='nesw', padx=(0, 8), pady=(0, 8))
         self.wordListbox.bind('<<ListboxSelect>>', self.onListWordSelected)
 
         # Scrollbar to wordlistbox
         self.scrollbarWords = ttk.Scrollbar(self)
-        self.scrollbarWords.grid(column=2, row=1, rowspan=3, sticky='nse', padx=(0, 8), pady=(0, 8))
+        self.scrollbarWords.grid(column=3, row=1, rowspan=4, sticky='nse', padx=(0, 8), pady=(0, 8))
 
         # Amount of rhymes
-        self.countValuesLabel = tk.Label(self, text="number entries: 0", font=self.listFont, fg=self.labelColor, bg=self.backgroundColor)
-        self.countValuesLabel.grid(column=2, row=3, sticky='se', padx=(0, 28), pady=(0, 10))
+        self.countValuesLabel = tk.Label(self, text="number entries: 0", font=self.listFont, fg=self.labelColor, bg=self.backgroundColor, width=20, anchor="e")
+        self.countValuesLabel.grid(column=3, row=4, sticky='se', padx=(0, 28), pady=(0, 10))
 
         # Configure listbox and scrollbar
         self.wordListbox.config(yscrollcommand=self.scrollbarWords.set)
@@ -125,7 +139,8 @@ class gui(tk.Tk):
             'lightmodeOn': self.isLightModeOn.get(),
             'isPerfectRhyme': self.isPerfectRhyme.get(),
             'withAdditionalwords': self.withAdditionalwords.get(),
-            'combobox': "Vowel rhyme"
+            'combobox': "Vowel rhyme",
+            'language': self.languageCombo.get()
         }
         self.loadSettings()
 
@@ -152,6 +167,7 @@ class gui(tk.Tk):
         self.settings['isPerfectRhyme'] = self.isPerfectRhyme.get()
         self.settings['withAdditionalwords'] = self.withAdditionalwords.get()
         self.settings['combobox'] = self.combo.get()
+        self.settings['language'] = self.languageCombo.get()
         with open('settings.json', 'w') as f:
             json.dump(self.settings, f)
 
@@ -164,6 +180,11 @@ class gui(tk.Tk):
         self.isPerfectRhyme.set(settings.get('isPerfectRhyme', False))
         self.withAdditionalwords.set(settings.get('withAdditionalwords', False))
         self.combo.set(settings.get('combobox', "Vowel rhyme"))
+        self.languageCombo.set(settings.get('language'))
+        self.selectedLanguageOption = settings.get('language')
+
+        # Languages
+        self.loadLanguages()
 
     def checkListboxEmpty(self):
         if self.wordListbox.size() == 0:
@@ -473,13 +494,38 @@ class gui(tk.Tk):
 
     def updateRhymeCount(self):
         count = self.wordListbox.size()
-        self.countValuesLabel.config(text=f"number entries: {count}")
+        self.countValuesLabel.config(text=f"{self.languagesData[self.selectedLanguage][0]['countValues']}: {count}")
 
     def getLastNCharacters(self, word, number):
         return word[-number:]
 
     def getAllExceptLastNCharacters(self, word, number):
         return word[:-number] if number != 0 else word
+
+    def loadLanguages(self):
+        # Load language-json
+        with open(self.languagesFile, 'r', encoding='utf-8') as file:
+            self.languagesData = json.load(file)
+
+        # Change language
+        if(self.selectedLanguageOption == "Deutsch"):
+            self.selectedLanguage = "german";
+        elif(self.selectedLanguageOption == "English"):
+            self.selectedLanguage = "english";
+
+        # Change elements
+        self.titleLabel.config(text=self.languagesData[self.selectedLanguage][0]["title"])
+        self.copyrightLabel.config(text=self.languagesData[self.selectedLanguage][0]["copyright"])
+        self.combo['values'] = self.languagesData[self.selectedLanguage][0]["rhymecombo"]
+        self.checkPerfectRhyme .config(text=self.languagesData[self.selectedLanguage][0]["checkPerfectRhyme"])
+        self.checkWithAdditionalwords .config(text=self.languagesData[self.selectedLanguage][0]["checkWithAdditionalwords"])
+        self.chooseFileButton .config(text=self.languagesData[self.selectedLanguage][0]["chooseFile"])
+        self.deleteListButton.config(text=self.languagesData[self.selectedLanguage][0]["deleteList"])
+        self.deleteWordButton.config(text=self.languagesData[self.selectedLanguage][0]["deleteWord"])
+
+        # Reload amount label
+        self.updateRhymeCount()
+
 
     def updateWordsInList(self, userWord, filteredWord):
         filteredList = []
@@ -505,10 +551,14 @@ class gui(tk.Tk):
         self.selectedOption = self.combo.get()
         self.reloadList()
 
+    def onComboLanguageSelected(self, event):
+        self.selectedLanguageOption = self.languageCombo.get()
+        self.loadLanguages()
+        self.reloadList()
+
     def removeConsonants(self, inputString):
         resultString = []
         inputString = inputString.lower()
-        print(inputString)
         # if consonant ending
         consonantEnding = ""
         if self.selectedOption == "Vowel rhyme + consonant ending" or self.selectedOption == "Classic rhyme":
@@ -601,7 +651,6 @@ class gui(tk.Tk):
             step5 = step4.replace('o', 'u')
 
             filteredString = step5
-        print(filteredString)
         return filteredString
 
     def getConsonantsBetweenLastTwoVowels(self, word):

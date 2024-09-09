@@ -598,10 +598,10 @@ class gui(tk.Tk):
         #inputStringEA = inputStringAA.replace('ea', 'ä')
 
         # ä = e
-        inputStringEAE = inputStringEI.replace('ä', 'e')
+        # inputStringEAE = inputStringEI.replace('ä', 'e')
 
         #aa = a | ee = e
-        inputStringAA = inputStringEAE.replace('aa', 'a')
+        inputStringAA = inputStringEI.replace('aa', 'a')
         inputStringEE = inputStringAA.replace('ee', 'e')
 
         # ee = e

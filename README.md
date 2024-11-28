@@ -2,7 +2,7 @@
 This is Rhyme generator!<br>
 It is made in python with the tkinter library.
 
-It currently only works with german words.
+>  **Note:** It currently only works with german words.
 That is because in German, words usually rhyme by following a simple pattern that works for most cases.
 It is a little different in English, which is the reason I have not implemented it yet.
 

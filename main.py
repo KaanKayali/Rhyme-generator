@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2024 [Your Name]. Unauthorized use is prohibited.
+# Copyright (c) 2024 Kaan Kayali. Unauthorized use is prohibited.
 
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, font, PhotoImage

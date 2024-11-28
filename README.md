@@ -44,8 +44,11 @@ To run this project, you need to configure a python interpreter and create a new
 I suggest you use Python 3.9 because that is the version I used to create this program.
 Choose as Script path the name of the python script (../main.py).
 
-The last step would be to install the package PyPDF2.
+The last step would be to install the package PyPDF2.<br><br>
 
 Try your hand at this program!
 
 Thank you for using rhyme Generator :)
+
+## License
+This project is proprietary. Unauthorized copying, modification, or distribution is strictly prohibited.

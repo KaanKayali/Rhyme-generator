@@ -18,7 +18,7 @@ Add a list of words by clicking on `Add a list (txt/PDF)` and selecting a text- 
 The file must contain words.
 
 The file is not required to follow a certain pattern in order to identify the words. <br>
-The program will automatically identify the words.
+The program is able automatically identify the words.
 
 #### Additional words
 By activating `Additional Words`, you allow the program to find rhymes for your input <br>

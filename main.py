@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+# Copyright (c) 2024 [Your Name]. Unauthorized use is prohibited.
+
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, font, PhotoImage
 import re
@@ -65,7 +67,7 @@ class gui(tk.Tk):
         self.titleLabel.grid(column=0, columnspan=2, row=0, sticky='w', padx=8, pady=(0, 8))
 
         # Copyright
-        self.copyrightLabel = tk.Label(self, text="Made by ©SohleKNKI", font=self.copyrightFont, fg=self.labelColor)
+        self.copyrightLabel = tk.Label(self, text="Made by ©KaanKayali", font=self.copyrightFont, fg=self.labelColor)
         self.copyrightLabel.grid(column=0, columnspan=2, row=0, sticky='ws', padx=8)
 
         # Textfield

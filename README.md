@@ -96,6 +96,7 @@ When `Perfect rhyme` is turned off, the app treats `e` and `i` as equivalent, an
 
 ## Troubleshooting
 - If the app cannot open `images/sun.png`, rebuild using the exact PyInstaller command above with `--add-data`.
+- If you see replacement characters like `�` for German umlauts, delete the files in `%APPDATA%\Rhymegenerator` and restart the app. Old user data files can keep the wrong encoding.
 - If PDF extraction fails, make sure the PDF contains selectable text.
 - If you see no rhymes, add more words to `loadwords.txt` or import a larger word list.
 

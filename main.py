@@ -6,10 +6,23 @@ from tkinter import ttk, filedialog, messagebox, font, PhotoImage
 import re
 import PyPDF2
 import os
+import sys
+import shutil
 import json
+
+
+def resource_path(relative_path):
+    """Return absolute path to resource, works for dev and PyInstaller."""
+    if getattr(sys, 'frozen', False):
+        base_path = sys._MEIPASS
+    else:
+        base_path = os.path.abspath(os.path.dirname(__file__))
+    return os.path.join(base_path, relative_path)
+
 
 class gui(tk.Tk):
     def __init__(self):
+        """Initialize the GUI and application state."""
         super().__init__()
 
         # Initialize
@@ -17,18 +30,34 @@ class gui(tk.Tk):
         self.resizable(False, False)
         self.minsize(640, 360)
 
-        #Variables
+        # Variables
         self.userInput = ""
         self.filteredInput = ""
         self.selectedOption = ""
-        self.loadFileName = "loadwords.txt"
         self.isLightModeOn = tk.BooleanVar(value=True)
         self.charsToAdd = "aeiouäüö1234567890"
         self.keypressTimer = None
         self.languagesFile = 'languages.json'
-        self.languagesData = None;
+        self.languagesData = None
         self.selectedLanguage = "german"
 
+        # Paths
+        self.resource_dir = resource_path("")
+        if getattr(sys, 'frozen', False):
+            self.user_dir = os.path.join(os.environ.get('APPDATA', os.path.expanduser('~')), 'Rhymegenerator')
+        else:
+            self.user_dir = self.resource_dir
+        os.makedirs(self.user_dir, exist_ok=True)
+
+        self.loadFileName = os.path.join(self.user_dir, "loadwords.txt")
+        self.settingsFile = os.path.join(self.user_dir, "settings.json")
+        self.languagesFile = resource_path('languages.json')
+        self.imagepath = os.path.join(self.resource_dir, "images")
+
+        if not os.path.exists(self.loadFileName) and os.path.exists(resource_path('loadwords.txt')):
+            shutil.copy(resource_path('loadwords.txt'), self.loadFileName)
+        if not os.path.exists(self.settingsFile) and os.path.exists(resource_path('settings.json')):
+            shutil.copy(resource_path('settings.json'), self.settingsFile)
 
         # Fonts
         self.titleFont = font.Font(family="Comic Sans MS", size=18, weight="bold")
@@ -48,9 +77,8 @@ class gui(tk.Tk):
         self.checkboxColor = "black"
 
         # Images
-        self.imagepath = "images/"
-        self.imgSun = PhotoImage(file=self.imagepath + "sun.png")
-        self.imgMoon = PhotoImage(file=self.imagepath + "moon.png")
+        self.imgSun = PhotoImage(file=os.path.join(self.imagepath, "sun.png"))
+        self.imgMoon = PhotoImage(file=os.path.join(self.imagepath, "moon.png"))
 
         # Grid
         self.columnconfigure(0, weight=1)
@@ -165,34 +193,56 @@ class gui(tk.Tk):
 
 
     def saveSettings(self):
+        """Save current user settings to disk."""
         self.settings['lightmodeOn'] = self.isLightModeOn.get()
         self.settings['isPerfectRhyme'] = self.isPerfectRhyme.get()
         self.settings['withAdditionalwords'] = self.withAdditionalwords.get()
         self.settings['combobox'] = self.combo.get()
         self.settings['language'] = self.languageCombo.get()
-        with open('settings.json', 'w') as f:
-            json.dump(self.settings, f)
+        try:
+            with open(self.settingsFile, 'w', encoding='utf-8') as f:
+                json.dump(self.settings, f, indent=2)
+        except Exception as error:
+            messagebox.showerror("Error", f"Unable to save settings: {error}")
 
     def loadSettings(self):
-        with open('settings.json', 'r') as f:
-            settings = json.load(f)
+        """Load saved settings and apply them to the interface."""
+        if not os.path.exists(self.settingsFile):
+            self.saveSettings()
+
+        try:
+            with open(self.settingsFile, 'r', encoding='utf-8') as f:
+                settings = json.load(f)
+        except Exception as error:
+            messagebox.showwarning("Warning", f"Settings file could not be loaded and will be reset: {error}")
+            self.settings = {
+                'lightmodeOn': True,
+                'isPerfectRhyme': False,
+                'withAdditionalwords': False,
+                'combobox': "Vowel rhyme",
+                'language': self.languageCombo.get()
+            }
+            self.saveSettings()
+            settings = self.settings
 
         # Update variables
         self.isLightModeOn.set(settings.get('lightmodeOn', True))
         self.isPerfectRhyme.set(settings.get('isPerfectRhyme', False))
         self.withAdditionalwords.set(settings.get('withAdditionalwords', False))
         self.combo.set(settings.get('combobox', "Vowel rhyme"))
-        self.languageCombo.set(settings.get('language'))
-        self.selectedLanguageOption = settings.get('language')
+        self.languageCombo.set(settings.get('language', self.languageCombo.get()))
+        self.selectedLanguageOption = self.languageCombo.get()
 
         # Languages
         self.loadLanguages()
 
     def checkListboxEmpty(self):
+        """Show instructions when the word list is empty."""
         if self.wordListbox.size() == 0:
             self.instructionsListbox()
 
     def instructionsListbox(self):
+        """Populate the listbox with usage instructions."""
         space = ""
         instructions = [
             "This is Rhyme generator!",
@@ -231,6 +281,7 @@ class gui(tk.Tk):
 
 
     def switchLightMode(self):
+        """Toggle between light and dark mode."""
         currentValue = self.isLightModeOn.get()
         self.isLightModeOn.set(not currentValue)
         self.updateColors()
@@ -239,10 +290,12 @@ class gui(tk.Tk):
 
 
     def allConstructFromWords(self, target, wordListfiltered, wordlist):
+        """Find additional word combinations matching the target."""
         if target == "":
             return [[]]  # Base case: If the target is an empty string, return an empty list
 
         def stripSubstring(mainString, substring):
+            """Remove the substring from the start and/or end of the string."""
             # Remove from the start if it exists
             if mainString.startswith(substring):
                 mainString = mainString[len(substring):]
@@ -266,6 +319,7 @@ class gui(tk.Tk):
         iterations = 0
         while iterations < len(newWordlist):
             def backTrack(newTarget):
+                """Try to reconstruct the target phrase from available words."""
                 prevtarget = newTarget
                 matchedWordfiltered = []
                 matchedWord = []
@@ -322,6 +376,7 @@ class gui(tk.Tk):
 
 
     def deleteList(self):
+        """Clear the saved word list and refresh the display."""
         questionResult = messagebox.askyesno("Confirm Delete", "Are you sure you want to delete all words?")
 
         if questionResult:
@@ -331,8 +386,7 @@ class gui(tk.Tk):
 
             # Deleting content of file
             try:
-                with open(self.loadFileName, "w") as file:
-                    # Clear text
+                with open(self.loadFileName, "w", encoding='utf-8') as file:
                     file.write("")
                 messagebox.showinfo("Cleared", "The word list has been cleared.")
             except Exception as error:
@@ -344,12 +398,14 @@ class gui(tk.Tk):
             self.checkListboxEmpty()
 
     def onListWordSelected(self, event):
+        """Handle listbox selection events."""
         self.checkWordSelection()
         self.deleteWordButton.config(state='normal')
         if self.withAdditionalwords.get():
             self.deleteWordButton.config(state='disabled')
 
     def checkWordSelection(self):
+        """Enable or disable the delete button based on selection."""
         selectedIndex = self.wordListbox.curselection()
         if selectedIndex:
             self.deleteWordButton.config(state='normal')
@@ -357,6 +413,7 @@ class gui(tk.Tk):
             self.deleteWordButton.config(state='disabled')
 
     def deleteWord(self):
+        """Remove the selected word from the saved list."""
         selectedIndex = self.wordListbox.curselection()
         index = selectedIndex[0]
         value = self.wordListbox.get(0, tk.END)[index]
@@ -373,6 +430,7 @@ class gui(tk.Tk):
         self.checkWordSelection()
 
     def chooseFile(self):
+        """Open a dialog to select text or PDF files for importing words."""
         # Open file dialog | Only .txt and .pdf files
         filePaths = filedialog.askopenfilenames(
             filetypes=[("Text Files", "*.txt"), ("PDF Files", "*.pdf")],
@@ -416,6 +474,7 @@ class gui(tk.Tk):
             self.checkListboxEmpty()
 
     def extractWordsFromFile(self, filePath):
+        """Parse words from a text file and add them to the list."""
         try:
             # Read file
             with open(filePath, 'r', encoding='utf-8') as file:
@@ -445,6 +504,7 @@ class gui(tk.Tk):
             messagebox.showerror("Error", f"An error occurred while reading the file: {error}")
 
     def extractWordsFromPDF(self, filePath):
+        """Parse words from a PDF file and add them to the list."""
         try:
             # Read PDF file
             with open(filePath, 'rb') as file:
@@ -477,17 +537,17 @@ class gui(tk.Tk):
             messagebox.showerror("Error", f"An error occurred while reading the PDF file: {error}")
 
     def saveWords(self, newWords):
+        """Write the current words to the storage file."""
         # Save new words in loadwords.txt
         try:
-            with open(self.loadFileName, "w") as file:
+            with open(self.loadFileName, "w", encoding='utf-8') as file:
                 for word in newWords:
-                    # Add words
-                    file.write("")
                     file.write(word + "\n")
         except Exception as error:
             messagebox.showerror("Error", f"An error occurred while saving the words: {error}")
 
     def checkIfWord(self, word):
+        """Validate whether a string is a word with at least one vowel."""
         vowels = "aeiouäüöAEIOUäüö"
         if(len(word) > 1):
             return any(char in vowels for char in word)
@@ -495,6 +555,7 @@ class gui(tk.Tk):
             return False
 
     def updateListbox(self, words):
+        """Refresh the listbox with the given words."""
         self.wordListbox.delete(0, tk.END)
         for word in words:
             self.wordListbox.insert(tk.END, word)
@@ -503,16 +564,20 @@ class gui(tk.Tk):
         self.updateRhymeCount()
 
     def updateRhymeCount(self):
+        """Update the rhyme count label in the UI."""
         count = self.wordListbox.size()
         self.countValuesLabel.config(text=f"{self.languagesData[self.selectedLanguage][0]['countValues']}: {count}")
 
     def getLastNCharacters(self, word, number):
+        """Return the last N characters of a word."""
         return word[-number:]
 
     def getAllExceptLastNCharacters(self, word, number):
+        """Return the word without its last N characters."""
         return word[:-number] if number != 0 else word
 
     def loadLanguages(self):
+        """Load UI labels and language text from the JSON file."""
         # Load language-json
         with open(self.languagesFile, 'r', encoding='utf-8') as file:
             self.languagesData = json.load(file)
@@ -538,6 +603,7 @@ class gui(tk.Tk):
 
 
     def updateWordsInList(self, userWord, filteredWord):
+        """Compute which words should be shown for the current input."""
         filteredList = []
 
         for word, filtered in zip(self.everyWord, self.everyWordFiltered):
@@ -558,15 +624,18 @@ class gui(tk.Tk):
         return filteredList
 
     def onComboSelected(self, event):
+        """Handle changes to the rhyme type selection."""
         self.selectedOption = self.combo.get()
         self.reloadList()
 
     def onComboLanguageSelected(self, event):
+        """Handle changes to the selected interface language."""
         self.selectedLanguageOption = self.languageCombo.get()
         self.loadLanguages()
         self.reloadList()
 
     def removeConsonants(self, inputString):
+        """Remove consonants from the input string, leaving vowels."""
         resultString = []
         inputString = inputString.lower()
         # if consonant ending
@@ -669,6 +738,7 @@ class gui(tk.Tk):
         return filteredString
 
     def getConsonantsBetweenLastTwoVowels(self, word):
+        """Return the consonants between the last two vowels."""
         # Find all vowels in the last syllable
         vowels = [match.start() for match in re.finditer(r'[aeiouäü]', word, flags=re.IGNORECASE)]
 
@@ -684,6 +754,7 @@ class gui(tk.Tk):
         return ''
 
     def reloadList(self):
+        """Reload the rhyme list and save settings after input changes."""
         #Delete button off when additional words is selected
         self.checkWordSelection()
         self.deleteWordButton.config(state='normal')
@@ -714,6 +785,7 @@ class gui(tk.Tk):
         self.saveSettings()
 
     def toggleLightmodeImage(self):
+        """Update the light/dark mode button icon."""
         # Toggle buttonimg based on state
         if self.isLightModeOn.get():
             self.lightmodeButton.config(image=self.imgSun)
@@ -721,6 +793,7 @@ class gui(tk.Tk):
             self.lightmodeButton.config(image=self.imgMoon)
 
     def onKeyreleased(self, event):
+        """Delay list updates until typing pauses."""
         # Cancel the previous timer if it exists
         if self.keypressTimer is not None:
             self.after_cancel(self.keypressTimer)
@@ -730,19 +803,22 @@ class gui(tk.Tk):
 
 
     def onKeypressed(self):
+        """Refresh the rhyme list after a short keypress delay."""
         # Everytime when key gets hit
         self.selectedOption = self.combo.get()
         self.reloadList()
 
     def loadWords(self):
+        """Load saved words from the word storage file."""
         if os.path.exists(self.loadFileName):
             try:
-                with open(self.loadFileName, "r") as file:
-                    self.everyWord = [line.strip() for line in file.readlines()]
+                with open(self.loadFileName, "r", encoding='utf-8') as file:
+                    self.everyWord = [line.strip() for line in file.readlines() if line.strip()]
             except Exception as error:
                 messagebox.showerror("Error", f"An error occurred while loading the words: {error}")
 
     def extractLastSyllable(self, word):
+        """Extract the last vowel-based syllable in a word."""
         # Find last syllable
         match = re.search(r'[aeiouäü]+[^aeiouäü]*$', word, re.IGNORECASE)
         if match:
@@ -750,6 +826,7 @@ class gui(tk.Tk):
         return word
 
     def getEndingConsonants(self, word):
+        """Return the final consonant sequence of the last syllable."""
         # Get last syllable
         lastSyllable = self.extractLastSyllable(word)
 
@@ -759,6 +836,7 @@ class gui(tk.Tk):
 
 
     def updateColors(self):
+        """Apply theme colors to all widgets."""
         # Colors
         if (self.isLightModeOn.get()):
             self.labelColor = "black"

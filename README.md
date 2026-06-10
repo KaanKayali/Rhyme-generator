@@ -1,54 +1,103 @@
-# Rhyme-generator
-This is Rhyme generator!<br>
-It is made in python with the tkinter library.
+# Rhyme Generator
 
->  **Note:** It currently only works with german words.
-That is because in German, words usually rhyme by following a simple pattern that works for most cases.
-It is a little different in English, which is the reason I have not implemented it yet.
+Rhyme Generator is a small Python desktop app for finding rhyming words from custom text or PDF word lists.
+It uses `tkinter` for the user interface and `PyPDF2` to extract words from PDFs.
 
-## How it works
-Type a word, wordcombination or even a phrase into the top-left textbox to find a rhyme for it.
-You will get as many rhymes as possible in the listbox at the right, based on your settings.
+> **Note:** The rhyme matching logic is designed for German word endings. The English option only changes the user interface language.
 
-If you are using this program for the first time, <br>
-you do not have any words yet that could rhyme with the word you typed.
+## What it does
+- Finds rhyming words from a user-provided list
+- Supports plain text and PDF files
+- Offers multiple rhyme modes
+- Saves settings and your word list automatically
+- Includes a light/dark interface toggle
 
-#### Add words
-Add a list of words by clicking on `Add a list (txt/PDF)` and selecting a text- or PDF file from your explorer. <br>
-The file must contain words.
+## Requirements
+- Windows
+- Python 3.9 or newer
+- `tkinter` (included with standard Python on Windows)
+- `PyPDF2`
 
-The file is not required to follow a certain pattern in order to identify the words. <br>
-The program is able automatically identify the words.
+## Setup
+1. Open PowerShell in the project folder.
+2. Create and activate a virtual environment:
+   ```powershell
+   python -m venv .venv
+   .\.venv\Scripts\Activate.ps1
+   ```
+3. Install dependencies:
+   ```powershell
+   python -m pip install -r requirements.txt
+   ```
 
-#### Additional words
-By activating `Additional Words`, you allow the program to find rhymes for your input <br>
-that include multiple words linked together.
+## Run from source
+```powershell
+python main.py
+```
 
-#### Rhyme-type
-There are a few types/ways the program can find rhymes for your input.
-- **Classic rhyme**: The endings of words that rhyme are identical
-- **Vowel rhyme**: The words that rhyme both have the same vowels.
-- **Vowel rhyme + consonant ending**: Words that rhyme both have the same vowels and the same endings.
+## Build a Windows executable
+You can build the app with PyInstaller. The executable name will be `Rhymegenerator.exe`.
 
-The most popular one, which also is mostly used in poems, is the classic-type of rhyme.
+Install PyInstaller if you do not already have it:
+```powershell
+python -m pip install pyinstaller
+```
 
-#### Language
-The language option currently only changes the text in the user interface. It can not find rhymes in English yet.
+Then run one of these commands:
 
-#### Perfect Rhyme
-If the `Perfect rhyme` option is turned off, the program treats **e** and **i**, as well as **u** and **o**, as the same sounds when finding rhymes. <br>
-This is useful in rap lyrics, where these differences are easy to overhear.
+- One-folder build (`dist\Rhymegenerator\Rhymegenerator.exe`):
+  ```powershell
+  pyinstaller --windowed --onedir --name Rhymegenerator --add-data "images;images" --add-data "languages.json;." --add-data "loadwords.txt;." --add-data "settings.json;." main.py
+  ```
 
-## How to use 
-To run this project, you need to configure a python interpreter and create a new virtual environment.
-I suggest you use Python 3.9 because that is the version I used to create this program.
-Choose as Script path the name of the python script (../main.py).
+- Single-file build (`dist\Rhymegenerator.exe`):
+  ```powershell
+  pyinstaller --windowed --onefile --name Rhymegenerator --add-data "images;images" --add-data "languages.json;." --add-data "loadwords.txt;." --add-data "settings.json;." main.py
+  ```
 
-The last step would be to install the package PyPDF2.<br><br>
+> If the app is built as a single file, user settings and word data are stored automatically in `%APPDATA%\Rhymegenerator`.
 
-Try your hand at this program!
+## Build helper
+A helper script is included:
+- `build_windows.bat`
 
-Thank you for using rhyme Generator :)
+Run it from the project root to install requirements and build the executable.
+
+## Files and folders
+- `main.py` — application source code
+- `images/` — icon assets for light/dark toggle
+- `languages.json` — UI text for German/English
+- `loadwords.txt` — default word list data
+- `settings.json` — default settings
+- `requirements.txt` — runtime dependency list
+
+## Usage
+1. Start the app by running `python main.py` or by launching `dist\Rhymegenerator.exe`.
+2. Type a word or phrase into the text field.
+3. Select a rhyme mode.
+4. Add a `.txt` or `.pdf` word list using `Add a list (txt/PDF)`.
+5. Optionally enable `Perfect rhyme` or `Additional words`.
+
+### Add words
+Click `Add a list (txt/PDF)` and select one or more text or PDF files. The app extracts plain words automatically, so the file does not need a special format.
+
+### Additional words
+When `Additional words` is enabled, the app may combine multiple words to produce rhyme candidates instead of only showing single-word results.
+
+### Rhyme modes
+- **Classic rhyme**: matches words with identical endings.
+- **Vowel rhyme**: matches words with the same vowel sequence.
+- **Vowel rhyme + consonant ending**: matches words with the same vowel sequence and the same ending sound.
+
+Classic rhyme is usually best for poems. For rap-style results, the looser vowel rhyme mode often produces more usable matches.
+
+### Perfect rhyme
+When `Perfect rhyme` is turned off, the app treats `e` and `i` as equivalent, and `u` and `o` as equivalent. This lets the app return broader rhyme matches.
+
+## Troubleshooting
+- If the app cannot open `images/sun.png`, rebuild using the exact PyInstaller command above with `--add-data`.
+- If PDF extraction fails, make sure the PDF contains selectable text.
+- If you see no rhymes, add more words to `loadwords.txt` or import a larger word list.
 
 ## License
 This project is proprietary. Unauthorized copying, modification, or distribution is strictly prohibited.
